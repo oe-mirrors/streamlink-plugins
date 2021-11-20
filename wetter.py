@@ -10,7 +10,7 @@ log = logging.getLogger(__name__)
 
 class Wetter(Plugin):
     _url_re = re.compile(r"https?://(?:www\.)?wetter\.com/")
-    _videourl_re = re.compile(r'data-video-url-(hls endpoint|mp4)\s*=\s*"(.+)"')
+    _videourl_re = re.compile(r'data-video-url-(hls| endpoint|mp4)\s*=\s*"(.+)"')
 
     _stream_schema = validate.Schema(
         validate.transform(_videourl_re.findall),
