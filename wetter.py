@@ -3,14 +3,14 @@ import re
 
 from streamlink.plugin import Plugin
 from streamlink.plugin.api import validate
-from streamlink.stream import HLSStream, HTTPStream, RTMPStream
+from streamlink.stream import HLSStream, HTTPStream
 
 log = logging.getLogger(__name__)
 
 
 class Wetter(Plugin):
     _url_re = re.compile(r"https?://(?:www\.)?wetter\.com/")
-    _videourl_re = re.compile(r'data-video-url-(hls|rtmp|endpoint|mp4)\s*=\s*"(.+)"')
+    _videourl_re = re.compile(r'data-video-url-(hls| endpoint|mp4)\s*=\s*"(.+)"')
 
     _stream_schema = validate.Schema(
         validate.transform(_videourl_re.findall),
@@ -42,8 +42,6 @@ class Wetter(Plugin):
             if stream["stream-type"] == "hls":
                 for s in HLSStream.parse_variant_playlist(self.session, stream["url"]).items():
                     yield s
-            elif stream["stream-type"] == "rtmp":
-                yield "0_live", RTMPStream(self.session, {"rtmp": stream["url"]})
             elif stream["stream-type"] == "endpoint":
                 res = self.session.http.get(stream["url"])
                 files = self.session.http.json(res, schema=self._endpoint_schema)
