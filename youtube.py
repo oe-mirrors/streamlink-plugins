@@ -1,9 +1,11 @@
+from __future__ import unicode_literals
+
 import json
 import logging
 import re
+
 from html import unescape
 from urllib.parse import urlparse, urlunparse
-
 from streamlink.plugin import Plugin, PluginError, pluginmatcher
 from streamlink.plugin.api import useragents, validate
 from streamlink.stream.ffmpegmux import MuxedStream
@@ -69,7 +71,7 @@ class YouTube(Plugin):
     }
 
     def __init__(self, url):
-        super().__init__(url)
+        super(YouTube, self).__init__(url)
         parsed = urlparse(url)
 
         # translate input URLs to be able to find embedded data and to avoid unnecessary HTTP redirects
@@ -127,8 +129,8 @@ class YouTube(Plugin):
     def _schema_playabilitystatus(cls, data):
         schema = validate.Schema(
             {"playabilityStatus": {
-                "status": str,
-                validate.optional("reason"): str
+                "status": validate.text,
+                validate.optional("reason"): validate.text
             }},
             validate.get("playabilityStatus"),
             validate.union_get("status", "reason")
@@ -139,9 +141,9 @@ class YouTube(Plugin):
     def _schema_videodetails(cls, data):
         schema = validate.Schema(
             {"videoDetails": {
-                "videoId": str,
-                "author": str,
-                "title": str,
+                "videoId": validate.text,
+                "author": validate.text,
+                "title": validate.text,
                 validate.optional("isLive"): validate.transform(bool),
                 validate.optional("isLiveContent"): validate.transform(bool),
                 validate.optional("isLiveDvrEnabled"): validate.transform(bool),
@@ -151,7 +153,7 @@ class YouTube(Plugin):
             validate.get("videoDetails"),
         )
         videoDetails = validate.validate(schema, data)
-        log.trace(f"videoDetails = {videoDetails!r}")
+        log.trace("videoDetails = {0!r}".format(videoDetails))
         return validate.validate(
             validate.union_get("videoId", "author", "title", "isLive"),
             videoDetails)
@@ -160,11 +162,11 @@ class YouTube(Plugin):
     def _schema_streamingdata(cls, data):
         schema = validate.Schema(
             {"streamingData": {
-                validate.optional("hlsManifestUrl"): str,
+                validate.optional("hlsManifestUrl"): validate.text,
                 validate.optional("formats"): [validate.all(
                     {
                         "itag": int,
-                        "qualityLabel": str,
+                        "qualityLabel": validate.text,
                         validate.optional("url"): validate.url(scheme="http")
                     },
                     validate.union_get("url", "qualityLabel")
@@ -173,12 +175,12 @@ class YouTube(Plugin):
                     {
                         "itag": int,
                         "mimeType": validate.all(
-                            str,
+                            validate.text,
                             validate.transform(cls._re_mime_type.search),
                             validate.union_get("type", "codecs"),
                         ),
                         validate.optional("url"): validate.url(scheme="http"),
-                        validate.optional("qualityLabel"): str
+                        validate.optional("qualityLabel"): validate.text
                     },
                     validate.union_get("url", "qualityLabel", "itag", "mimeType")
                 )]
@@ -203,7 +205,7 @@ class YouTube(Plugin):
             stream_type, stream_codecs = mimeType
 
             if stream_type == "audio":
-                streams[f"audio_{stream_codecs}"] = HTTPStream(self.session, url)
+                streams["audio_{0}".format(stream_codecs)] = HTTPStream(self.session, url)
 
                 # find the best quality audio stream m4a, opus or vorbis
                 if best_audio_itag is None or self.adp_audio[itag] > self.adp_audio[best_audio_itag]:
@@ -215,7 +217,7 @@ class YouTube(Plugin):
                 if itag not in adaptive_streams:
                     continue
                 vurl = adaptive_streams[itag]
-                log.debug(f"MuxedStream: v {itag} a {best_audio_itag} = {name}")
+                log.debug("MuxedStream: v {0} a {1} = {2}".format(itag, best_audio_itag, name))
                 streams[name] = MuxedStream(
                     self.session,
                     HTTPStream(self.session, vurl),
@@ -237,19 +239,18 @@ class YouTube(Plugin):
                 elem.attrib.get("name"): unescape(elem.attrib.get("value"))
                 for elem in self._schema_consent(res.text)
             }
-            log.debug(f"c_data_keys: {', '.join(c_data.keys())}")
+            log.debug("c_data_keys: {}".format(', '.join(c_data.keys())))
             res = self.session.http.post("https://consent.youtube.com/s", data=c_data)
             consent = self.session.http.cookies.get('CONSENT', domain='.youtube.com')
             if 'YES' in consent:
                 self.cache.set("consent_ck", consent)
-
         return res
 
     @staticmethod
     def _get_data_from_regex(res, regex, descr):
         match = re.search(regex, res.text)
         if not match:
-            log.debug(f"Missing {descr}")
+            log.debug("Missing {}".format(descr))
             return
         return parse_json(match.group(1))
 
@@ -309,7 +310,7 @@ class YouTube(Plugin):
         status, reason = self._schema_playabilitystatus(data)
         if status != "OK":
             if errorlog:
-                log.error(f"Could not get video info - {status}: {reason}")
+                log.error("Could not get video info - {0}: {1}".format(status, reason))
             return False
         return True
 
@@ -332,7 +333,7 @@ class YouTube(Plugin):
                 return
 
         video_id, self.author, self.title, is_live = self._schema_videodetails(data)
-        log.debug(f"Using video ID: {video_id}")
+        log.debug("Using video ID: {0}".format(video_id))
 
         if is_live:
             log.debug("This video is live.")
@@ -340,7 +341,7 @@ class YouTube(Plugin):
         streams = {}
         hls_manifest, formats, adaptive_formats = self._schema_streamingdata(data)
 
-        protected = next((True for url, *_ in formats + adaptive_formats if url is None), False)
+        protected = next((True for fmt in formats + adaptive_formats if fmt[0] is None), False)
         if protected:
             log.debug("This video may be protected.")
 
