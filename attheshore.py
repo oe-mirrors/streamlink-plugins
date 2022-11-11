@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 class AtTheShore(Plugin):
     _url_re = re.compile(r"https?://attheshore\.com/livecam-(.+)")
     _stream_re = re.compile(r"""(?:<source\s+)(?=src\s*=\s*(?P<quote>["']?)(?P<value>.*?)(?P=quote)\s*)?""", re.DOTALL)
-    _videoapi_url = "http://api.igv.com/v1.5/getVideoStream?apiKey=T1iSb7bCmg3UPxKC9pHAg4ykgMGPAjsg&id={camid}"
+    _videoapi_url = "https://api.igotview.com/v1.5/getVideoStream?apiKey=T1iSb7bCmg3UPxKC9pHAg4ykgMGPAjsg&id={camid}"
 
     _stream_schema = validate.Schema(validate.transform(_stream_re.search), validate.get("value"), validate.url())
 
