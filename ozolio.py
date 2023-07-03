@@ -18,7 +18,7 @@ class Ozolio(Plugin):
     _sesapi_cid_schema = validate.Schema(
         {
             "session": {
-                "id": validate.text,
+                "id": str,
             }
         },
         validate.get("session"),

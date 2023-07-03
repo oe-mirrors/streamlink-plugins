@@ -22,19 +22,19 @@ class LivespottingTV(Plugin):
     _URL_PLAYER_SHOWROOM = "https://player.livespotting.com/v2/livesource/{livesource_id}?type=showroom"
 
     _playlist_schema = validate.Schema({
-        "id": validate.text,
+        "id": str,
         "playlist": validate.url(scheme="http"),
-        "playlist_mode": validate.text,
+        "playlist_mode": str,
         "weather_live_enable": bool,
     })
     _sources_schema = validate.Schema([{
-        validate.optional("mediaid"): validate.text,
-        validate.optional("title"): validate.text,
+        validate.optional("mediaid"): str,
+        validate.optional("title"): str,
         validate.optional("livestream"): validate.all(validate.url(scheme="http"), validate.contains(".m3u8")),
         "sources": [{"file": validate.all(validate.url(scheme="http"), validate.contains(".m3u8"))}],
     }])
     _livesource_schema = validate.Schema({
-        "id": validate.text,
+        "id": str,
         "source": validate.all(validate.url(scheme="http"), validate.contains(".m3u8")),
     })
 

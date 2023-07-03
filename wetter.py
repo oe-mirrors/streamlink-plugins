@@ -17,7 +17,7 @@ class Wetter(Plugin):
         validate.transform(lambda vl: [{"stream-type": v[0], "url": v[1]} for v in vl]),
         [
             {
-                "stream-type": validate.text,
+                "stream-type": str,
                 "url": validate.url(),
             }
         ],
@@ -25,7 +25,7 @@ class Wetter(Plugin):
     _endpoint_schema = validate.Schema(
         [
             {
-                validate.optional("label"): validate.text,
+                validate.optional("label"): str,
                 "type": "video/mp4",
                 "file": validate.url(scheme="http"),
             }
