@@ -3,20 +3,19 @@ from __future__ import unicode_literals
 import re
 
 from streamlink.plugin.api import useragents
+from streamlink.plugin import pluginmatcher
 from streamlink.plugins.livestream import Livestream
 
 
+@pluginmatcher(
+    re.compile(r"https?://(?:www)\.(?:(radio21|rockland))\.de/(?:musik/)?(?:tv)?(?:programm/)")
+)
 class Radio2See(Livestream):
     """
     Support for www.radio21.de/tv & www.rockland.de/tv Live TV stream
     """
 
-    _url_re = re.compile(r"https?://(?:www)\.(?:(radio21|rockland))\.de/(?:musik/)?(?:tv)")
     _streamsrc_re = re.compile(r"""<iframe.+?src=["'](?P<streamsrc>[^"']+)["']""", re.DOTALL)
-
-    @classmethod
-    def can_handle_url(cls, url):
-        return cls._url_re.match(url) is not None
 
     def _get_streams(self):
         headers = {

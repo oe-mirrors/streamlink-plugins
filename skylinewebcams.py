@@ -3,20 +3,18 @@ import re
 from urllib.parse import urljoin
 
 from streamlink.exceptions import PluginError
-from streamlink.plugin import Plugin
+from streamlink.plugin import Plugin, pluginmatcher
 from streamlink.stream import HLSStream
 
 log = logging.getLogger(__name__)
 
 
+@pluginmatcher(
+    re.compile(r"https?://(?:www\.)?skylinewebcams\.com/(?:[\w-]+/){5}.+\.html")
+)
 class SkylineWebcams(Plugin):
-    _url_re = re.compile(r"https?://(?:www\.)?skylinewebcams\.com/(?:[\w-]+/){5}.+\.html")
     _source_re = re.compile(r"source:\s*'(.+?)'")
     _HD_AUTH_BASE = "https://hd-auth.skylinewebcams.com/"
-
-    @classmethod
-    def can_handle_url(cls, url):
-        return cls._url_re.match(url) is not None
 
     def _get_streams(self):
         res = self.session.http.get(self.url)
