@@ -13,14 +13,14 @@ log = logging.getLogger(__name__)
     re.compile(r"https?://(?:www\.)?skylinewebcams\.com/(?:[\w-]+/){5}.+\.html")
 )
 class SkylineWebcams(Plugin):
-    _source_re = re.compile(r"source:\s*'(.+?)'")
+    _source_re = re.compile(r'(?:url|source)\s*:\s*(["\'])(?P<url>.+?\.m3u8.*?)\1')
     _HD_AUTH_BASE = "https://hd-auth.skylinewebcams.com/"
 
     def _get_streams(self):
         res = self.session.http.get(self.url)
         m = self._source_re.search(res.text)
-        if m and ".m3u8" in m.group(1):
-            url = urljoin(self._HD_AUTH_BASE, m.group(1))
+        if m:
+            url = urljoin(self._HD_AUTH_BASE, m.group("url"))
             url = url.replace("livee.", "live.")
             log.debug(url)
             streams = HLSStream.parse_variant_playlist(self.session, url)
@@ -28,8 +28,6 @@ class SkylineWebcams(Plugin):
                 return {"live": HLSStream(self.session, url)}
             else:
                 return streams
-        elif m:
-            raise PluginError("Unexpected source format: {0}".format(m.group(1)))
         else:
             raise PluginError("Could not extract source.")
 
